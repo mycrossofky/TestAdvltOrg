@@ -1,93 +1,89 @@
 using System;
 
-class Test {
-	public static void arrayToDifferent(int[] chips, int count) {
-		int summ = 0;
-		for (int i = 0; i < count; i++) {
-			summ += chips[i];
-		}
-		if (summ % count != 0) {
-			Console.WriteLine("Chips number are not enough for every players");
-			//std::cout << "Chips number are not enough for every players\n";
-			Environment.Exit(1);
-		}
-		int avg = summ / count;
-		for (int i = 0; i < count; i++) {
-			chips[i] -= avg;
-		}
-	}
+class Program {
+  public static void arrayToDifferent(int[] chips  ) {
+    int summ = 0;
 
-	public static int MaxPos(int[] chips, int count) {
-		int max = chips[0];
-		int maxPos = 0;
-		for (int i = 1; i < count; i++)
-		if (chips[i] > max) {
-			max = chips[i];
-			maxPos = i;
-		}
-		return maxPos;
-	}
-	public static int LeftOrRight(int[] chips, int size, int pos, int count = -1) {
-		if (count == 0) return 0;
-		if (count < 0) count = size - 2;
-		int left = 0,
-		right = 0;
-		for (int i = 0; i < count; i++) {
-			right += chips[(pos + 1 + i) % size];
-			left += chips[(size + pos - 1 - i) % size];
-		}
-		if (left == right) return LeftOrRight(chips, size, pos, count - 1);
-		return left - right; //-left +right 0-anywhere
-	}
-	public static int move(int[] chips, int size, int pos, int direction) {
-		int newPos = pos;
-		direction = direction < 0 ? -1 : 1;
+    for (int i = 0; i < chips.Length; i++) {
+      summ += chips[i];
+    }
+    if (summ % chips.Length != 0) {
+      Console.WriteLine("Chips number are not enough for every players");
+      Environment.Exit(1);
+    }
+    int avg = summ / chips.Length;
+    for (int i = 0; i < chips.Length; i++) {
+      chips[i] -= avg;
+    }
+  }
 
-		for (int i = 0; i < size; i++) {
-			newPos = (newPos + size + direction) % size;
-			if (chips[newPos] < 0) {
-				chips[newPos]++;
-				chips[pos]--;
-				return i + 1;
-			}
-		}
-		return 0;
-	}
+  public static int move(int[] chips, int pos, int count, int inc) {
 
-	public static void Main(string[] args) {
-		String s = Console.ReadLine();
-		int k = s.IndexOf("[");
-		s = s.Substring(k + 1, s.IndexOf("]") - k - 1);
-		string[] strings = s.Split(',');
-		int[] chips = Array.ConvertAll < string, int > (strings, int.Parse);
-		int count = chips.Length;
+    if (count == 0) return 0;
+    int moves = 0;
+    chips[pos] = chips[pos] - count;
+    for (int i = 0; i < chips.Length; i++) {
+      moves += count;
+      pos = (pos + chips.Length + inc) % chips.Length;
 
-		if (count <= 1) {
-			Console.WriteLine(0);
-			//std::cout << "0";
-			return;
-		}
-		arrayToDifferent(chips, count);
+      if (chips[pos] >= 0) continue;
+      while (chips[pos] < 0 && count > 0) {
+        chips[pos] = chips[pos] + 1;
+        count--;
+      }
+      if (count == 0) break;
+    }
+    return moves;
+  }
+  public static int testFull(int[] chips) {
 
-		if (count == 2) {
-			Console.WriteLine(Math.Abs(chips[0]));
-			//std::cout << abs(chips[0]);      
-			return;
-		}
+    int pos;
+    for (pos = 0; pos < chips.Length; pos++) {
+      if (chips[pos] > 0) break;
+    }
+    if (pos == chips.Length) return 0;
+    int[] c2 = new int[chips.Length];
+    int maxMoves = -1;
 
-		int moves = 0;
-		while (true) {
-			int maxPos = MaxPos(chips, count);
-			if (chips[maxPos] == 0) {
-				Console.WriteLine(moves);
-				//std::cout << moves <<"\n";
-				break;
-			}
-			int direction = LeftOrRight(chips, count, maxPos);
-			int oneMove = move(chips, count, maxPos, direction);
-			moves += oneMove;
-		}
-		return;
+    for (int left = chips[pos]; left >= 0; left--) {
+      int right = chips[pos] - left;
+      int moves = 0;
+      for (int i = 0; i < chips.Length; i++)
+        c2[i] = chips[i];
+      moves = move(c2, pos, left, -1);
+      moves += move(c2, pos, right, 1);
+      if (maxMoves != -1 && moves > maxMoves) continue;
+      moves += testFull(c2);
 
-	}
+      if (moves < maxMoves || maxMoves == -1)
+        maxMoves = moves;
+
+    }
+    return maxMoves;
+  }
+
+  public static void Main(string[] args) {
+    String s = Console.ReadLine();
+    int k = s.IndexOf("[");
+    s = s.Substring(k + 1, s.IndexOf("]") - k - 1);
+    string[] strings = s.Split(',');
+    int[] chips = Array.ConvertAll < string, int > (strings, int.Parse);
+    int count = chips.Length;
+
+    if (count <= 1) {
+      Console.WriteLine(0);
+      return;
+    }
+    arrayToDifferent(chips);
+
+    if (count == 2) {
+      Console.WriteLine(Math.Abs(chips[0]));
+      return;
+    }
+
+    int moves = testFull(chips);
+    Console.WriteLine(moves);
+    return;
+
+  }
 }
